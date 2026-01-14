@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora ONANO - Plan de Compensación</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+        
+        const ONANOCalculator = () => {
+          const [directos, setDirectos] = useState(0);
+          const [niveles, setNiveles] = useState(0);
+          const [vn, setVn] = useState(0);
+          const [vg, setVg] = useState(0);
+          const [showDisclaimer, setShowDisclaimer] = useState(true);
+          const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+          // RANGOS ACTUALIZADOS
+          const rangos = [
+            { nombre: 'Socio', pvRequerido: 100, gvRequerido: 100, infinito: 0 },
+            { nombre: 'Bronce', pvRequerido: 100, gvRequerido: 1000, infinito: 0 },
+            { nombre: 'Plata', pvRequerido: 100, gvRequerido: 3000, infinito: 0.5 },
+            { nombre: 'Oro', pvRequerido: 100, gvRequerido: 5000, infinito: 0.75 },
+            { nombre: 'Platino', pvRequerido: 100, gvRequerido: 10000, infinito: 1.0 },
+            { nombre: 'Diamante', pvRequerido: 100, gvRequerido: 25000, infinito: 1.25 },
+            { nombre: 'Doble Diamante', pvRequerido: 100, gvRequerido: 50000, infinito: 1.5 },
+            { nombre: 'Triple Diamante', pvRequerido: 100, gvRequerido: 100000, infinito: 1.75 },
+            { nombre: 'Diamante Embajador', pvRequerido: 100, gvRequerido: 250000, infinito: 1.5 },
+            { nombre: 'Doble Diamante Embajador', pvRequerido: 100, gvRequerido: 500000, infinito: 1.75 },
+            { nombre: 'Triple Diamante Embajador', pvRequerido: 100, gvRequerido: 1000000, infinito: 2.0 }
+          ];
+
+          // PORCENTAJES UNILEVEL ACTUALIZADOS (9 niveles)
+          const porcentajesUnilevel = [6, 8, 10, 12, 5, 4, 3, 2, 2];
+
+          // PORCENTAJES MATCH ACTUALIZADOS POR RANGO (según imagen oficial)
+          const porcentajesMatchPorRango = {
+            'Socio': { niveles: [], porcentajes: [] },
+            'Bronce': { niveles: [], porcentajes: [] },
+            'Plata': { niveles: [1], porcentajes: [5] },
+            'Oro': { niveles: [1], porcentajes: [10] },
+            'Platino': { niveles: [1], porcentajes: [15] },
+            'Diamante': { niveles: [1, 2], porcentajes: [25, 5] },
+            'Doble Diamante': { niveles: [1, 2, 3], porcentajes: [25, 10, 5] },
+            'Triple Diamante': { niveles: [1, 2, 3, 4], porcentajes: [25, 10, 10, 5] },
+            'Diamante Embajador': { niveles: [1, 2, 3, 4, 5], porcentajes: [25, 15, 10, 5, 1] },
+            'Doble Diamante Embajador': { niveles: [1, 2, 3, 4, 5], porcentajes: [25, 15, 10, 5, 3] },
+            'Triple Diamante Embajador': { niveles: [1, 2, 3, 4, 5], porcentajes: [25, 15, 10, 5, 5] }
+          };
+
+          const calcularRango = (pvTotal, gvTotal) => {
+            for (let i = rangos.length - 1; i >= 0; i--) {
+              if (pvTotal >= rangos[i].pvRequerido && gvTotal >= rangos[i].gvRequerido) {
+                return rangos[i];
+              }
+            }
+            return rangos[0]; // Socio por defecto
+          };
+
+          const calculos = useMemo(() => {
+            const estructura = [];
+            let pvTotalAcumulado = vn;
+            let gvTotalAcumulado = vg;
+            
+            for (let nivel = 1; nivel <= niveles; nivel++) {
+              const personas = Math.pow(directos, nivel);
+              estructura.push({ 
+                nivel, 
+                personas, 
+                pvNivel: personas * vn,
+                gvNivel: personas * vg 
+              });
+              pvTotalAcumulado += personas * vn;
+              gvTotalAcumulado += personas * vg;
+            }
+
+            const miRango = calcularRango(pvTotalAcumulado, gvTotalAcumulado);
+            let bonoUnilevel = 0, bonoInfinito = 0, bonoMatch = 0;
+            const detalleUnilevel = [], detalleInfinito = [], detalleMatch = [];
+            
+            // BONO UNILEVEL - SIEMPRE SE COBRA (sin necesidad de calificar a rango)
+            for (let i = 0; i < Math.min(niveles, 9); i++) {
+              const comision = estructura[i].personas * vn * (porcentajesUnilevel[i] / 100);
+              bonoUnilevel += comision;
+              detalleUnilevel.push({ 
+                nivel: i + 1, 
+                personas: estructura[i].personas, 
+                porcentaje: porcentajesUnilevel[i], 
+                comision 
+              });
+            }
+
+            // BONO INFINITO - Solo desde Plata en adelante (nivel 10 al infinito)
+            if (niveles > 9 && miRango.infinito > 0) {
+              const directosInfo = [];
+              
+              // Calcular rango de cada directo
+              for (let d = 0; d < directos; d++) {
+                let pvDirecto = vn;
+                let gvDirecto = vg;
+                
+                for (let i = 1; i < niveles; i++) {
+                  const personasSubnivel = Math.pow(directos, i);
+                  pvDirecto += personasSubnivel * vn;
+                  gvDirecto += personasSubnivel * vg;
+                }
+                
+                directosInfo.push(calcularRango(pvDirecto, gvDirecto));
+              }
+              
+              // Calcular comisiones del nivel 10 en adelante
+              for (let i = 9; i < niveles; i++) {
+                let comisionNivel = 0;
+                
+                for (let d = 0; d < directos; d++) {
+                  const rangoDirecto = directosInfo[d];
+                  const diferencial = Math.max(0, miRango.infinito - rangoDirecto.infinito);
+                  
+                  if (diferencial > 0) {
+                    const personasPorDirecto = estructura[i].personas / directos;
+                    comisionNivel += personasPorDirecto * vn * (diferencial / 100);
+                  }
+                }
+                
+                if (comisionNivel > 0) {
+                  bonoInfinito += comisionNivel;
+                  
+                  // Agrupar información de diferenciales
+                  const diferenciales = {};
+                  directosInfo.forEach(rangoDirecto => {
+                    const dif = Math.max(0, miRango.infinito - rangoDirecto.infinito);
+                    const key = `${rangoDirecto.nombre}-${dif}`;
+                    if (!diferenciales[key]) {
+                      diferenciales[key] = { 
+                        rango: rangoDirecto.nombre, 
+                        infinito: rangoDirecto.infinito, 
+                        diferencial: dif, 
+                        cantidad: 0 
+                      };
+                    }
+                    diferenciales[key].cantidad++;
+                  });
+                  
+                  detalleInfinito.push({ 
+                    nivel: i + 1, 
+                    personas: estructura[i].personas, 
+                    miInfinito: miRango.infinito, 
+                    detalleDiferenciales: Object.values(diferenciales), 
+                    comision: comisionNivel 
+                  });
+                }
+              }
+            }
+
+            // BONO MATCH - REQUIERE CALIFICACIÓN DE RANGO
+            // Se aplica sobre niveles de profundidad (nivel 1, 2, 3, etc.)
+            // El porcentaje se cobra del bono unilevel ganado por cada persona en ese nivel
+            const matchConfig = porcentajesMatchPorRango[miRango.nombre];
+            
+            if (matchConfig && matchConfig.niveles.length > 0) {
+              // Iterar sobre cada nivel que el rango permite cobrar match
+              for (let i = 0; i < matchConfig.niveles.length && i < niveles; i++) {
+                const nivelProfundidad = i + 1; // Nivel 1, 2, 3, etc.
+                const personasEnNivel = estructura[i].personas;
+                const porcentajeMatch = matchConfig.porcentajes[i];
+                
+                // Para cada persona en este nivel, calcular su bono unilevel individual
+                // Cada persona tiene directos = 'directos' y profundidad disponible = niveles - nivelProfundidad
+                const profundidadDisponible = niveles - nivelProfundidad;
+                
+                if (profundidadDisponible >= 1) {
+                  // Calcular cuánto gana cada persona de este nivel en su bono unilevel
+                  let bonoUnilevelPorPersona = 0;
+                  
+                  // Calcular el unilevel de los primeros 9 niveles bajo esta persona
+                  const nivelesUnilevelDisponibles = Math.min(profundidadDisponible, 9);
+                  for (let k = 0; k < nivelesUnilevelDisponibles; k++) {
+                    const personasSubnivel = Math.pow(directos, k + 1);
+                    bonoUnilevelPorPersona += personasSubnivel * vn * (porcentajesUnilevel[k] / 100);
+                  }
+                  
+                  // Si hay más de 9 niveles, calcular el volumen total de esta persona para ver su rango
+                  if (profundidadDisponible > 9) {
+                    let pvPersona = vn;
+                    let gvPersona = vg;
+                    
+                    for (let k = 1; k <= profundidadDisponible; k++) {
+                      const personasSubnivel = Math.pow(directos, k);
+                      pvPersona += personasSubnivel * vn;
+                      gvPersona += personasSubnivel * vg;
+                    }
+                    
+                    const rangoPersona = calcularRango(pvPersona, gvPersona);
+                    
+                    // Si tiene bono infinito, agregarlo
+                    if (rangoPersona.infinito > 0) {
+                      for (let k = 9; k < profundidadDisponible; k++) {
+                        const personasSubnivel = Math.pow(directos, k + 1);
+                        bonoUnilevelPorPersona += personasSubnivel * vn * (rangoPersona.infinito / 100);
+                      }
+                    }
+                  }
+                  
+                  // Calcular el match de todas las personas en este nivel
+                  const comisionMatch = personasEnNivel * bonoUnilevelPorPersona * (porcentajeMatch / 100);
+                  bonoMatch += comisionMatch;
+                  
+                  detalleMatch.push({
+                    nivel: nivelProfundidad,
+                    personas: personasEnNivel,
+                    bonoUnilevelPorPersona,
+                    porcentajeMatch,
+                    comisionMatch
+                  });
+                }
+              }
+            }
+
+            return { 
+              estructura, 
+              pvTotal: pvTotalAcumulado,
+              gvTotal: gvTotalAcumulado, 
+              miRango, 
+              bonoUnilevel, 
+              detalleUnilevel, 
+              bonoInfinito, 
+              detalleInfinito, 
+              bonoMatch, 
+              detalleMatch, 
+              totalGanancias: bonoUnilevel + bonoInfinito + bonoMatch 
+            };
+          }, [directos, niveles, vn, vg]);
+
+          if (showDisclaimer) {
+            return (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 rounded-t-2xl">
+                    <h2 className="text-3xl font-bold text-white">⚠️ AVISO LEGAL IMPORTANTE</h2>
+                  </div>
+                  <div className="p-8 space-y-4">
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                      <p className="font-bold text-red-800">⚠️ DESCARGO DE RESPONSABILIDAD</p>
+                      <p className="text-red-700 mt-2">Los resultados mostrados son PROYECCIONES TEÓRICAS únicamente. NO GARANTIZAN ganancias reales.</p>
+                    </div>
+                    <div className="space-y-3 text-sm text-gray-700">
+                      <p><strong>1. Propósito:</strong> Herramienta de simulación con fines educativos.</p>
+                      <p><strong>2. No Garantía:</strong> Los resultados reales varían por desempeño, mercado, esfuerzo y habilidades.</p>
+                      <p><strong>3. Exactitud:</strong> Simplificación del plan oficial. Consulte documentación oficial de ONANO.</p>
+                      <p><strong>4. Estructura Simulada:</strong> Asume duplicación perfecta y uniforme, lo cual es poco realista.</p>
+                      <p><strong>5. Comisiones:</strong> No incluye tasas, impuestos ni deducciones aplicables.</p>
+                      <p><strong>6. No Asesoría:</strong> Esta NO es asesoría financiera, legal ni de inversión profesional.</p>
+                      <p><strong>7. Rentabilidad Pasada:</strong> Los resultados históricos NO garantizan resultados futuros.</p>
+                      <p><strong>8. Responsabilidad:</strong> Usted es el único responsable de sus decisiones basadas en esta información.</p>
+                      <p><strong>9. Consulta Profesional:</strong> Consulte asesores certificados antes de decisiones importantes.</p>
+                      <p><strong>10. Cumplimiento Legal:</strong> Asegúrese de cumplir todas las leyes locales aplicables.</p>
+                    </div>
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                      <p className="font-bold text-blue-800">📋 TÉRMINOS DE USO</p>
+                      <p className="text-blue-700 mt-2">Al usar esta calculadora, usted acepta que comprende que es solo una herramienta educativa y que los resultados son estimaciones teóricas.</p>
+                    </div>
+                    <div className="flex items-center gap-3 bg-gray-50 p-4 rounded">
+                      <input 
+                        type="checkbox" 
+                        id="terms" 
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="w-5 h-5"
+                      />
+                      <label htmlFor="terms" className="text-sm font-semibold">He leído y acepto el descargo de responsabilidad y los términos de uso</label>
+                    </div>
+                    <button 
+                      onClick={() => acceptedTerms && setShowDisclaimer(false)}
+                      disabled={!acceptedTerms}
+                      className={`w-full py-4 rounded-xl font-bold text-lg ${acceptedTerms ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                    >
+                      {acceptedTerms ? 'CONTINUAR A LA CALCULADORA' : 'ACEPTE LOS TÉRMINOS PARA CONTINUAR'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8">
+              <div className="container mx-auto px-4 max-w-6xl">
+                <div className="text-center mb-8">
+                  <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">Calculadora de Ganancias</h1>
+                  <p className="text-xl text-gray-600">ONANO - Plan de Compensación 2026</p>
+                  <p className="text-sm text-gray-500 mt-2 max-w-2xl mx-auto">Esta herramienta es solo para simulación educativa. Los resultados no garantizan ganancias reales.</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
+                  <h2 className="text-2xl font-bold mb-4">Parámetros de Simulación</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Directos por Persona</label>
+                      <input type="number" min="0" max="20" value={directos} onChange={(e) => setDirectos(parseInt(e.target.value) || 0)} className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:outline-none text-lg font-semibold" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Niveles de Profundidad</label>
+                      <input type="number" min="0" max="20" value={niveles} onChange={(e) => setNiveles(parseInt(e.target.value) || 0)} className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none text-lg font-semibold" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">VN por Persona (USD)</label>
+                      <input type="number" min="0" step="10" value={vn} onChange={(e) => setVn(parseFloat(e.target.value) || 0)} className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:border-green-500 focus:outline-none text-lg font-semibold" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">VG por Persona (USD)</label>
+                      <input type="number" min="0" step="10" value={vg} onChange={(e) => setVg(parseFloat(e.target.value) || 0)} className="w-full px-4 py-3 border-2 border-pink-300 rounded-lg focus:border-pink-500 focus:outline-none text-lg font-semibold" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-blue-500 rounded-xl p-6 text-white">
+                    <h3 className="font-semibold mb-2">Total Red</h3>
+                    <p className="text-4xl font-bold">{(calculos.estructura.reduce((s, e) => s + e.personas, 0) + 1).toLocaleString()}</p>
+                    <p className="text-blue-100 text-sm">personas</p>
+                  </div>
+                  <div className="bg-purple-500 rounded-xl p-6 text-white">
+                    <h3 className="font-semibold mb-2">Volumen Total (GV)</h3>
+                    <p className="text-4xl font-bold">${calculos.gvTotal.toLocaleString()}</p>
+                    <p className="text-purple-100 text-sm">volumen grupal</p>
+                  </div>
+                  <div className="bg-orange-500 rounded-xl p-6 text-white">
+                    <h3 className="font-semibold mb-2">Tu Rango</h3>
+                    <p className="text-3xl font-bold">{calculos.miRango.nombre}</p>
+                  </div>
+                </div>
+
+                <div className="bg-green-600 rounded-xl p-8 mb-6 text-white text-center">
+                  <h2 className="text-3xl font-bold mb-2">💰 GANANCIAS TOTALES ESTIMADAS</h2>
+                  <p className="text-6xl font-bold mb-4">${calculos.totalGanancias.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                  <div className="flex justify-center gap-8 text-sm">
+                    <div><p>Bono Unilevel</p><p className="text-xl font-bold">${calculos.bonoUnilevel.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
+                    <div><p>Bono Infinito</p><p className="text-xl font-bold">${calculos.bonoInfinito.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
+                    <div><p>Bono Match</p><p className="text-xl font-bold">${calculos.bonoMatch.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-white rounded-xl p-6">
+                    <h3 className="text-xl font-bold mb-4 border-b-2 pb-2">📊 Bono Unilevel (Niveles 1-9)</h3>
+                    <p className="text-xs text-gray-500 mb-3 italic">Se cobra sin necesidad de calificar a rango</p>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {calculos.detalleUnilevel.map(d => (
+                        <div key={d.nivel} className="flex justify-between bg-blue-50 p-3 rounded">
+                          <span className="font-semibold">Nivel {d.nivel} ({d.personas.toLocaleString()} × {d.porcentaje}%)</span>
+                          <span className="font-bold text-blue-600">${d.comision.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-4 border-t-2 flex justify-between">
+                      <span className="font-bold">Total:</span>
+                      <span className="font-bold text-2xl text-blue-600">${calculos.bonoUnilevel.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6">
+                    <h3 className="text-xl font-bold mb-4 border-b-2 pb-2">♾️ Bono Infinito (Niveles 10+)</h3>
+                    <p className="text-xs text-gray-500 mb-3 italic">Solo desde rango Plata en adelante</p>
+                    {calculos.detalleInfinito.length > 0 ? (
+                      <>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {calculos.detalleInfinito.map(d => (
+                            <div key={d.nivel} className="bg-purple-50 p-3 rounded">
+                              <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Nivel {d.nivel} ({d.personas.toLocaleString()})</span>
+                                <span className="font-bold text-purple-600">${d.comision.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                              </div>
+                              <div className="text-xs">
+                                <p className="font-semibold">Breakaway:</p>
+                                {d.detalleDiferenciales.map((dif, i) => (
+                                  <div key={i} className="pl-2">{dif.rango} ({dif.cantidad}x): {d.miInfinito}% - {dif.infinito}% = <span className="font-bold">{dif.diferencial}%</span></div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t-2 flex justify-between">
+                          <span className="font-bold">Total:</span>
+                          <span className="font-bold text-2xl text-purple-600">${calculos.bonoInfinito.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">{niveles <= 9 ? 'Necesitas más de 9 niveles' : 'Necesitas rango Plata o superior'}</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 lg:col-span-2">
+                    <h3 className="text-xl font-bold mb-4 border-b-2 pb-2">🤝 Bono Match</h3>
+                    <p className="text-xs text-gray-500 mb-3 italic">Requiere calificación de rango (desde Plata en adelante) - Porcentaje del bono unilevel de cada persona por nivel</p>
+                    {calculos.detalleMatch.length > 0 ? (
+                      <>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {calculos.detalleMatch.map(d => (
+                            <div key={d.nivel} className="bg-green-50 p-4 rounded">
+                              <div className="flex justify-between mb-2">
+                                <span className="font-semibold">Nivel {d.nivel} - {d.personas.toLocaleString()} personas × {d.porcentajeMatch}%</span>
+                                <span className="font-bold text-xl text-green-600">${d.comisionMatch.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                              </div>
+                              <div className="text-sm bg-white p-2 rounded">
+                                <span>Unilevel c/u: <strong>${d.bonoUnilevelPorPersona.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t-2 flex justify-between">
+                          <span className="font-bold">Total:</span>
+                          <span className="font-bold text-2xl text-green-600">${calculos.bonoMatch.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">Necesitas rango Plata o superior</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-6">
+                  <h3 className="text-xl font-bold mb-4 border-b-2 pb-2">👥 Estructura del Equipo</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-blue-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left">Nivel</th>
+                          <th className="px-4 py-3 text-right">Personas</th>
+                          <th className="px-4 py-3 text-right">PV Nivel</th>
+                          <th className="px-4 py-3 text-right">GV Nivel</th>
+                          <th className="px-4 py-3 text-right">GV Acum.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b bg-yellow-50">
+                          <td className="px-4 py-3 font-semibold">TÚ</td>
+                          <td className="px-4 py-3 text-right">1</td>
+                          <td className="px-4 py-3 text-right">{vn.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right">{vg.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-blue-600">{vg.toLocaleString()}</td>
+                        </tr>
+                        {calculos.estructura.map((e, i) => {
+                          const gvAcum = calculos.estructura.slice(0, i + 1).reduce((s, x) => s + x.gvNivel, vg);
+                          return (
+                            <tr key={e.nivel} className="border-b hover:bg-gray-50">
+                              <td className="px-4 py-3 font-semibold">{e.nivel}</td>
+                              <td className="px-4 py-3 text-right">{e.personas.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-right">{e.pvNivel.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-right">{e.gvNivel.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-blue-600">{gvAcum.toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded mt-6">
+                  <p className="text-sm text-yellow-800">
+                    <strong>⚠️ Recordatorio:</strong> Esta es una proyección teórica. Los resultados reales dependen de múltiples factores y no están garantizados. Consulte el plan oficial de compensación de ONANO para información completa.
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<ONANOCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
