@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Socio - ONANO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4ff; color: #1f2937; }
+
+    #overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; z-index: 999;
+    }
+    #disclaimer {
+      background: #fff; border-radius: 14px; max-width: 520px;
+      width: 100%; max-height: 90vh; overflow-y: auto;
+    }
+    .dh { background: linear-gradient(135deg,#f59e0b,#ef4444); padding: 1.25rem 1.5rem; border-radius: 14px 14px 0 0; }
+    .dh h2 { color: #fff; font-size: 1.2rem; }
+    .db { padding: 1.25rem 1.5rem; }
+    .d-alert { background: #fef2f2; border-left: 4px solid #ef4444; padding: .75rem 1rem; border-radius: 6px; margin-bottom: .75rem; font-size: .83rem; color: #991b1b; }
+    .d-item { font-size: .82rem; color: #374151; margin: .3rem 0; }
+    .d-check { display: flex; align-items: center; gap: .6rem; background: #f9fafb; border: 1px solid #d1d5db; padding: .85rem; border-radius: 8px; margin: .9rem 0; cursor: pointer; }
+    .d-check input { width: 17px; height: 17px; cursor: pointer; }
+    .d-check label { font-weight: 600; font-size: .88rem; cursor: pointer; }
+    #btn-ok { width: 100%; padding: .85rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: not-allowed; background: #e5e7eb; color: #9ca3af; transition: all .2s; }
+    #btn-ok.on { background: #16a34a; color: #fff; cursor: pointer; }
+
+    #main { display: none; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    .title { text-align: center; margin-bottom: 1.25rem; }
+    .title h1 { font-size: 1.9rem; font-weight: 800; background: linear-gradient(135deg,#2563eb,#7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .title p { color: #6b7280; font-size: .9rem; margin-top: .2rem; }
+
+    .card { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 1.1rem; }
+    .card h2 { font-size: 1rem; font-weight: 700; color: #1f2937; margin-bottom: .85rem; padding-bottom: .5rem; border-bottom: 2px solid #e5e7eb; }
+
+    .params { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: .9rem; }
+    .fg label { display: block; font-size: .73rem; font-weight: 600; color: #374151; margin-bottom: .25rem; }
+    .fg input { width: 100%; padding: .55rem .7rem; border-radius: 8px; font-size: .95rem; font-weight: 600; outline: none; transition: border .2s; }
+    .fg .hint { font-size: .68rem; color: #9ca3af; margin-top: .18rem; }
+    .i1 { border: 2px solid #93c5fd; } .i1:focus { border-color: #2563eb; }
+    .i2 { border: 2px solid #c4b5fd; } .i2:focus { border-color: #7c3aed; }
+    .i3 { border: 2px solid #86efac; } .i3:focus { border-color: #16a34a; }
+    .i4 { border: 2px solid #f9a8d4; } .i4:focus { border-color: #db2777; }
+    .i5 { border: 2px solid #fdba74; } .i5:focus { border-color: #ea580c; }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(175px,1fr)); gap: .9rem; margin-bottom: 1.1rem; }
+    .kpi { border-radius: 12px; padding: 1.1rem 1.25rem; color: #fff; }
+    .kpi .kl { font-size: .75rem; font-weight: 600; opacity: .85; margin-bottom: .25rem; }
+    .kpi .kv { font-size: 1.45rem; font-weight: 800; }
+    .kpi .ks { font-size: .7rem; opacity: .7; margin-top: .15rem; }
+    .k1 { background: linear-gradient(135deg,#6366f1,#4338ca); }
+    .k2 { background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
+    .k3 { background: linear-gradient(135deg,#22c55e,#15803d); }
+
+    .total-box { background: linear-gradient(135deg,#16a34a,#059669); border-radius: 12px; padding: 1.75rem; text-align: center; color: #fff; margin-bottom: 1.1rem; box-shadow: 0 6px 20px rgba(22,163,74,.28); }
+    .total-box .tl { font-size: .95rem; font-weight: 600; opacity: .9; margin-bottom: .4rem; }
+    .total-box .tv { font-size: 2.6rem; font-weight: 800; margin-bottom: .85rem; }
+    .total-box .tb { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+    .total-box .tb div p:first-child { font-size: .72rem; opacity: .75; }
+    .total-box .tb div p:last-child { font-size: 1rem; font-weight: 700; }
+    .total-box .tn { font-size: .72rem; opacity: .6; margin-top: .6rem; }
+
+    .bonos2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(350px,1fr)); gap: 1.1rem; margin-bottom: 1.1rem; }
+
+    .brow { display: flex; justify-content: space-between; align-items: center; padding: .45rem .7rem; border-radius: 7px; margin-bottom: .35rem; font-size: .83rem; }
+    .brow span:first-child { color: #374151; }
+    .brow span:last-child { font-weight: 700; }
+    .rb { background: #eff6ff; } .rb span:last-child { color: #2563eb; }
+    .rp { background: #f5f3ff; } .rp span:last-child { color: #7c3aed; }
+    .rg { background: #f0fdf4; } .rg span:last-child { color: #16a34a; }
+
+    .bdetail { background: #f9fafb; border-radius: 5px; padding: .3rem .6rem; font-size: .7rem; color: #6b7280; margin-top: .2rem; margin-bottom: .35rem; }
+    .btotal { display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #e5e7eb; padding-top: .7rem; margin-top: .35rem; }
+    .btotal span:first-child { font-weight: 700; color: #1f2937; }
+    .btotal span:last-child { font-size: 1.15rem; font-weight: 800; }
+    .cb { color: #2563eb; } .cp { color: #7c3aed; } .cg { color: #16a34a; }
+
+    .empty-msg { display: flex; align-items: center; justify-content: center; min-height: 90px; color: #9ca3af; font-size: .83rem; text-align: center; padding: 1rem; }
+
+    .tw { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    thead tr { background: #e0e7ff; }
+    thead th { padding: .55rem .7rem; text-align: right; font-weight: 700; color: #3730a3; white-space: nowrap; }
+    thead th:first-child { text-align: left; }
+    tbody tr { border-bottom: 1px solid #f3f4f6; }
+    tbody tr:hover { background: #f9fafb; }
+    tbody td { padding: .5rem .7rem; text-align: right; }
+    tbody td:first-child { text-align: left; font-weight: 600; }
+    .tr-hl { background: #fefce8 !important; font-weight: 700; }
+
+    .aviso { background: #fffbeb; border-left: 4px solid #f59e0b; padding: .85rem 1rem; border-radius: 8px; font-size: .8rem; color: #92400e; }
+
+    #match-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: .6rem; }
+  </style>
+</head>
+<body>
+
+<div id="overlay">
+  <div id="disclaimer">
+    <div class="dh"><h2>⚠️ Aviso Legal Importante</h2></div>
+    <div class="db">
+      <div class="d-alert">
+        <strong>Descargo de Responsabilidad</strong><br>
+        Los resultados son PROYECCIONES TEÓRICAS. No garantizan ganancias reales.
+      </div>
+      <p class="d-item"><strong>1.</strong> Herramienta de simulación con fines educativos.</p>
+      <p class="d-item"><strong>2.</strong> Los resultados varían por desempeño, mercado y esfuerzo personal.</p>
+      <p class="d-item"><strong>3.</strong> Simplificación del plan oficial. Consulte la documentación de ONANO.</p>
+      <p class="d-item"><strong>4.</strong> Asume duplicación perfecta y uniforme, lo cual es poco realista.</p>
+      <p class="d-item"><strong>5.</strong> NO es asesoría financiera, legal ni de inversión.</p>
+      <div class="d-check">
+        <input type="checkbox" id="ck" onchange="toggleBtn()">
+        <label for="ck">He leído y acepto el descargo de responsabilidad</label>
+      </div>
+      <button id="btn-ok" onclick="continuar()">Acepta los términos para continuar</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div class="title">
+    <h1>Calculadora de Ganancias</h1>
+    <p>ONANO · Plan de Compensación 2026</p>
+  </div>
+
+  <div class="card">
+    <h2>Parámetros de Simulación</h2>
+    <div class="params">
+      <div class="fg">
+        <label>Directos por Persona</label>
+        <input class="i1" type="number" id="p-dir" value="3" min="1" step="1" oninput="calcular()">
+      </div>
+      <div class="fg">
+        <label>Niveles de Profundidad</label>
+        <input class="i2" type="number" id="p-niv" value="5" min="1" step="1" oninput="calcular()">
+      </div>
+      <div class="fg">
+        <label>CV por Persona</label>
+        <input class="i3" type="number" id="p-cv" value="100" min="0" step="10" oninput="calcular()">
+      </div>
+      <div class="fg">
+        <label>GV por Persona</label>
+        <input class="i4" type="number" id="p-gv" value="100" min="0" step="10" oninput="calcular()">
+      </div>
+      <div class="fg">
+        <label>Tipo de Cambio (USD)</label>
+        <input class="i5" type="number" id="p-tc" value="1" min="0" step="0.01" oninput="calcular()">
+        <div class="hint">Solo aplica al Bono Avance de Rango</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi k1">
+      <div class="kl">Tu Rango</div>
+      <div class="kv" id="k-rango" style="font-size:1rem">—</div>
+      <div class="ks" id="k-gv">GV Total: —</div>
+    </div>
+    <div class="kpi k2">
+      <div class="kl">Personas en tu Red</div>
+      <div class="kv" id="k-personas">—</div>
+      <div class="ks">personas totales</div>
+    </div>
+    <div class="kpi k3">
+      <div class="kl">Bono Avance de Rango</div>
+      <div class="kv" id="k-av-usd" style="font-size:1rem">—</div>
+      <div class="ks" id="k-av-local">— · pago único</div>
+    </div>
+  </div>
+
+  <div class="total-box">
+    <div class="tl">💰 Ganancias Mensuales Estimadas</div>
+    <div class="tv" id="t-total">—</div>
+    <div class="tb">
+      <div><p>Unilevel</p><p id="t-uni">—</p></div>
+      <div><p>Infinito</p><p id="t-inf">—</p></div>
+      <div><p>Match</p><p id="t-match">—</p></div>
+    </div>
+    <div class="tn" id="t-note"></div>
+  </div>
+
+  <div class="bonos2">
+    <div class="card">
+      <h2>📊 Bono Unilevel</h2>
+      <p style="font-size:.73rem;color:#9ca3af;margin-bottom:.7rem">Se cobra sin necesidad de calificar rango · Niveles 1 al 9</p>
+      <div id="det-uni"></div>
+      <div class="btotal"><span>Total Unilevel</span><span class="cb" id="tot-uni">—</span></div>
+    </div>
+    <div class="card">
+      <h2>♾️ Bono Infinito</h2>
+      <p style="font-size:.73rem;color:#9ca3af;margin-bottom:.7rem">Desde Platino · Nivel 10 en adelante · Con breakaway</p>
+      <div id="det-inf"></div>
+      <div class="btotal" id="tot-inf-row" style="display:none"><span>Total Infinito</span><span class="cp" id="tot-inf">—</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🤝 Bono Match</h2>
+    <p style="font-size:.73rem;color:#9ca3af;margin-bottom:.7rem">Requiere calificación de rango (desde Plata) · % del Bono Unilevel+Infinito de cada persona por nivel</p>
+    <div id="match-grid"></div>
+    <div class="btotal" id="tot-match-row" style="display:none"><span>Total Match</span><span class="cg" id="tot-match">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>🏆 Tabla de Rangos</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rango</th><th>CV Req.</th><th>GV Req.</th><th>Infinito %</th><th>Bono USD</th><th>Bono Convertido</th></tr></thead>
+        <tbody id="t-rangos"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👥 Estructura del Equipo</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Nivel</th><th>Personas</th><th>CV Nivel</th><th>GV Nivel</th><th>GV Acumulado</th></tr></thead>
+        <tbody id="t-estructura"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="aviso"><strong>⚠️ Recordatorio:</strong> Esta es una proyección teórica con estructura uniforme. Los resultados reales dependen de múltiples factores y no están garantizados. Consulte el plan oficial de compensación de ONANO.</div>
+</div>
+
+<script>
+const RANGOS = [
+  {nombre:'Socio',                     cvReq:100,gvReq:100,     inf:0,   bono:0    },
+  {nombre:'Bronce',                    cvReq:100,gvReq:1000,    inf:0,   bono:100  },
+  {nombre:'Plata',                     cvReq:100,gvReq:3000,    inf:0,   bono:150  },
+  {nombre:'Oro',                       cvReq:100,gvReq:5000,    inf:0,   bono:200  },
+  {nombre:'Platino',                   cvReq:100,gvReq:10000,   inf:0.5, bono:250  },
+  {nombre:'Diamante',                  cvReq:100,gvReq:25000,   inf:0.75,bono:500  },
+  {nombre:'Doble Diamante',            cvReq:100,gvReq:50000,   inf:1.0, bono:1000 },
+  {nombre:'Triple Diamante',           cvReq:100,gvReq:100000,  inf:1.25,bono:2500 },
+  {nombre:'Diamante Embajador',        cvReq:100,gvReq:250000,  inf:1.5, bono:5000 },
+  {nombre:'Doble Diamante Embajador',  cvReq:100,gvReq:500000,  inf:1.75,bono:10000},
+  {nombre:'Triple Diamante Embajador', cvReq:100,gvReq:1000000, inf:2.0, bono:25000},
+];
+const UNI=[6,8,10,12,5,4,3,2,2];
+const MATCH={
+  'Socio':[],'Bronce':[],
+  'Plata':[5],'Oro':[10],'Platino':[15],
+  'Diamante':[25,5],
+  'Doble Diamante':[25,10,5],
+  'Triple Diamante':[25,10,10,5],
+  'Diamante Embajador':[25,15,10,5,1],
+  'Doble Diamante Embajador':[25,15,10,5,3],
+  'Triple Diamante Embajador':[25,15,10,5,5],
+};
+
+const f  = n => n.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fn = n => n.toLocaleString('es-MX');
+const $  = id => document.getElementById(id);
+
+function getRango(cv,gv){
+  for(let i=RANGOS.length-1;i>=0;i--)
+    if(cv>=RANGOS[i].cvReq&&gv>=RANGOS[i].gvReq)return RANGOS[i];
+  return RANGOS[0];
+}
+function calcGV(dir,prof,gvPP){
+  let t=gvPP;
+  for(let i=1;i<=prof;i++)t+=Math.pow(dir,i)*gvPP;
+  return t;
+}
+function calcUni(dir,prof,cv){
+  let t=0;
+  for(let i=0;i<Math.min(prof,9);i++)t+=Math.pow(dir,i+1)*cv*(UNI[i]/100);
+  return t;
+}
+function calcInf(dir,prof,cv,rango,gvPP){
+  if(prof<=9||rango.inf===0)return{total:0,filas:[]};
+  const gvDir=calcGV(dir,prof-1,gvPP);
+  const rgDir=getRango(cv,gvDir);
+  const filas=[];let total=0;
+  for(let i=9;i<prof;i++){
+    const pctEf=Math.max(0,rango.inf-rgDir.inf);
+    const com=Math.pow(dir,i+1)*cv*(pctEf/100);
+    if(com>0){total+=com;filas.push({nivel:i+1,personas:Math.pow(dir,i+1),pctMio:rango.inf,pctDir:rgDir.inf,pctEf,com});}
+  }
+  return{total,filas};
+}
+
+function toggleBtn(){
+  const ok=$('ck').checked;
+  $('btn-ok').className=ok?'on':'';
+  $('btn-ok').textContent=ok?'Continuar a la Calculadora':'Acepta los términos para continuar';
+}
+function continuar(){
+  if(!$('ck').checked)return;
+  $('overlay').style.display='none';
+  $('main').style.display='block';
+  calcular();
+}
+
+function calcular(){
+  const dir=parseInt($('p-dir').value)||0;
+  const niv=parseInt($('p-niv').value)||0;
+  const cv=parseFloat($('p-cv').value)||0;
+  const gvPP=parseFloat($('p-gv').value)||0;
+  const tc=parseFloat($('p-tc').value)||1;
+  if(dir<=0||niv<=0||cv<=0)return;
+
+  let totalP=0,miGv=gvPP;
+  const estructura=[];
+  for(let n=1;n<=niv;n++){const p=Math.pow(dir,n);totalP+=p;miGv+=p*gvPP;estructura.push({nivel:n,personas:p,cvN:p*cv,gvN:p*gvPP});}
+
+  const miR=getRango(cv,miGv);
+  const mPct=MATCH[miR.nombre]||[];
+
+  // Unilevel
+  let sumU=0;const fU=[];
+  for(let i=0;i<Math.min(niv,9);i++){const p=Math.pow(dir,i+1);const c=p*cv*(UNI[i]/100);sumU+=c;fU.push({nivel:i+1,personas:p,pct:UNI[i],com:c});}
+
+  // Infinito
+  const resI=calcInf(dir,niv,cv,miR,gvPP);
+
+  // Match
+  let sumM=0;const fM=[];
+  for(let i=0;i<mPct.length;i++){
+    const np=i+1;if(np>niv)break;
+    const ps=niv-np;if(ps<1)break;
+    const p=Math.pow(dir,np);const pct=mPct[i];
+    const gvS=calcGV(dir,ps,gvPP);const rgS=getRango(cv,gvS);
+    const uS=calcUni(dir,ps,cv);const iS=calcInf(dir,ps,cv,rgS,gvPP).total;
+    const base=uS+iS;const com=p*base*(pct/100);
+    sumM+=com;fM.push({nivel:np,personas:p,pct,rg:rgS.nombre,uS,iS,base,com});
+  }
+
+  const avU=miR.bono;const avL=avU*tc;const tot=sumU+resI.total+sumM;
+
+  // KPIs
+  $('k-rango').textContent=miR.nombre;
+  $('k-gv').textContent='GV Total: '+fn(miGv);
+  $('k-personas').textContent=fn(totalP);
+  $('k-av-usd').textContent='USD $'+fn(avU);
+  $('k-av-local').textContent=f(avL)+' (local) · pago único';
+  $('t-total').textContent=f(tot);
+  $('t-uni').textContent=f(sumU);
+  $('t-inf').textContent=f(resI.total);
+  $('t-match').textContent=f(sumM);
+  $('t-note').textContent='+ Bono Avance Rango: '+f(avL)+' (pago único, no mensual)';
+
+  // Unilevel
+  $('det-uni').innerHTML=fU.map(d=>`<div class="brow rb"><span>Nivel ${d.nivel} · ${fn(d.personas)} personas · ${d.pct}%</span><span>${f(d.com)}</span></div>`).join('');
+  $('tot-uni').textContent=f(sumU);
+
+  // Infinito
+  if(resI.filas.length>0){
+    $('det-inf').innerHTML=resI.filas.map(d=>`
+      <div class="brow rp" style="flex-direction:column;align-items:flex-start;gap:.2rem">
+        <div style="display:flex;justify-content:space-between;width:100%">
+          <span>Nivel ${d.nivel} · ${fn(d.personas)} personas</span><span>${f(d.com)}</span>
+        </div>
+        <div class="bdetail">${d.pctMio}% (mi rango) − ${d.pctDir}% (directo) = <strong>${d.pctEf}%</strong> efectivo</div>
+      </div>`).join('');
+    $('tot-inf-row').style.display='flex';
+    $('tot-inf').textContent=f(resI.total);
+  } else {
+    $('det-inf').innerHTML=`<div class="empty-msg">${niv<=9?'Necesitas más de 9 niveles para activar este bono':'El rango '+miR.nombre+' no califica para Bono Infinito'}</div>`;
+    $('tot-inf-row').style.display='none';
+  }
+
+  // Match
+  if(fM.length>0){
+    $('match-grid').innerHTML=fM.map(d=>`
+      <div class="brow rg" style="flex-direction:column;align-items:flex-start;gap:.3rem">
+        <div style="display:flex;justify-content:space-between;width:100%">
+          <span>Nivel ${d.nivel} · ${fn(d.personas)} personas · ${d.pct}%</span><span>${f(d.com)}</span>
+        </div>
+        <div class="bdetail">Rango c/u: <strong>${d.rg}</strong> &nbsp;|&nbsp; Uni: <strong>${f(d.uS)}</strong>${d.iS>0?' + Inf: <strong>'+f(d.iS)+'</strong>':''}</div>
+      </div>`).join('');
+    $('tot-match-row').style.display='flex';
+    $('tot-match').textContent=f(sumM);
+  } else {
+    $('match-grid').innerHTML=`<div class="empty-msg" style="grid-column:1/-1">${mPct.length===0?'El rango '+miR.nombre+' no califica para Bono Match. Necesitas Plata o superior.':'Necesitas más niveles para cobrar Match'}</div>`;
+    $('tot-match-row').style.display='none';
+  }
+
+  // Tabla Rangos
+  $('t-rangos').innerHTML=RANGOS.map(r=>`
+    <tr${r.nombre===miR.nombre?' class="tr-hl"':''}>
+      <td>${r.nombre===miR.nombre?'★ ':''}${r.nombre}</td>
+      <td>${fn(r.cvReq)}</td><td>${fn(r.gvReq)}</td>
+      <td style="color:#7c3aed">${r.inf>0?r.inf+'%':'—'}</td>
+      <td style="color:#6b7280">${r.bono>0?'$'+fn(r.bono):'—'}</td>
+      <td style="color:#16a34a;font-weight:600">${r.bono>0?f(r.bono*tc):'—'}</td>
+    </tr>`).join('');
+
+  // Tabla Estructura
+  let gvAcum=gvPP;
+  const filaYo=`<tr class="tr-hl"><td>TÚ</td><td>${fn(1)}</td><td>${fn(cv)}</td><td>${fn(gvPP)}</td><td style="color:#2563eb">${fn(gvPP)}</td></tr>`;
+  const filasRed=estructura.map(e=>{gvAcum+=e.gvN;return`<tr><td>${e.nivel}</td><td>${fn(e.personas)}</td><td>${fn(e.cvN)}</td><td>${fn(e.gvN)}</td><td style="color:#2563eb;font-weight:600">${fn(gvAcum)}</td></tr>`;}).join('');
+  $('t-estructura').innerHTML=filaYo+filasRed;
+}
+</script>
+</body>
+</html>
