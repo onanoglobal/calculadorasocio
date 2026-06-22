@@ -106,7 +106,7 @@
   <div id="disclaimer">
     <div class="dh"><h2>⚠️ Aviso Legal Importante</h2></div>
     <div class="db">
-      <div class="d-alert"><strong>Descargo de Responsabilidad</strong><br>Los resultados son PROYECCIONES TEÓRICAS. No garantizan ganancias reales.</div>
+      <div class="d-alert"><strong>Descargo de Responsabilidad</strong><br>Los resultados son PROYECCIONES TEÓRICAS, no garantizan ganancias reales.</div>
       <p class="d-item"><strong>1.</strong> Herramienta de simulación con fines educativos.</p>
       <p class="d-item"><strong>2.</strong> Los resultados varían por desempeño, mercado y esfuerzo personal.</p>
       <p class="d-item"><strong>3.</strong> Simplificación del plan oficial, consulte la documentación de ONANO.</p>
@@ -137,8 +137,8 @@
     <div class="params" style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.35rem;">
       <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>Directos por Persona</label><input class="i1" type="number" id="p-dir" value="3" min="1" step="1" oninput="calcular()"></div>
       <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>Niveles de Profundidad</label><input class="i2" type="number" id="p-niv" value="5" min="1" step="1" oninput="calcular()"></div>
-      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>CV por Persona</label><input class="i3" type="number" id="p-cv" value="100" min="0" step="10" oninput="calcular()"></div>
-      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>GV por Persona</label><input class="i4" type="number" id="p-gv" value="100" min="0" step="10" oninput="calcular()"></div>
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>PV (Vol. Personal)</label><input class="i3" type="number" id="p-cv" value="100" min="0" step="10" oninput="calcular()"></div>
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>GV (Vol. Grupal)</label><input class="i4" type="number" id="p-gv" value="100" min="0" step="10" oninput="calcular()"></div>
     </div>
   </div>
 
@@ -166,7 +166,7 @@
     <div class="tv" id="t-total">—</div>
     <div class="tb">
       <div><p>Bono Unilevel</p><p id="t-uni">—</p></div>
-      <div><p>Bono Infinito</p><p id="t-inf">—</p></div>
+      <div><p>Bono Infinito Uninivel</p><p id="t-inf">—</p></div>
       <div><p>Bono Match</p><p id="t-match">—</p></div>
     </div>
   </div>
@@ -175,12 +175,12 @@
   <div class="bonos2">
     <div class="card">
       <h2>📊 Bono Unilevel</h2>
-      <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem">Se cobra sin necesidad de calificar rango · Niveles 1 al 9</p>
+      <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem">Se cobra sin calificar rango · Niveles 1 al 9</p>
       <div id="det-uni"></div>
       <div class="btotal"><span>Total Unilevel</span><span class="cb" id="tot-uni">—</span></div>
     </div>
     <div class="card">
-      <h2>♾️ Bono Infinito</h2>
+      <h2>♾️ Bono Infinito Uninivel</h2>
       <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem">Desde Platino · Nivel 10 en adelante · Con breakaway</p>
       <div id="det-inf"></div>
       <div class="btotal" id="tot-inf-row" style="display:none"><span>Total Infinito</span><span class="cp" id="tot-inf">—</span></div>
@@ -190,7 +190,7 @@
   <!-- Match -->
   <div class="card">
     <h2>🤝 Bono Match</h2>
-    <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem">Requiere calificación de rango (desde Plata) · % del Bono Unilevel+Infinito de cada persona por nivel</p>
+    <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem">Requiere calificación de rango (desde Plata) · % del Bono Unilevel+Infinito de cada persona en 5 niveles</p>
     <div id="match-grid"></div>
     <div class="btotal" id="tot-match-row" style="display:none"><span>Total Match</span><span class="cg" id="tot-match">—</span></div>
   </div>
@@ -213,7 +213,7 @@
     </table></div>
   </div>
 
-  <div class="aviso"><strong>⚠️ Recordatorio:</strong> Esta es una proyección teórica con estructura uniforme. Los resultados reales dependen de múltiples factores y no están garantizados. Consulte el plan oficial de compensación de ONANO.</div>
+  <div class="aviso"><strong>⚠️ Recordatorio:</strong> Esta es una proyección teórica con estructura uniforme, los resultados reales dependen de múltiples factores y no están garantizados. Consulte el plan oficial de compensación de ONANO.</div>
 </div>
 
 <script>
