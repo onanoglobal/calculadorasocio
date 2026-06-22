@@ -36,7 +36,8 @@
     .card h2 { font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 1.3rem; padding-bottom: .75rem; border-bottom: 2px solid #e5e7eb; }
 
     /* ── PARAMS ── */
-    .params { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 1.35rem; }
+    .params { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 1.35rem; justify-items: center; }
+    .params .fg { width: 100%; }
     .fg label { display: block; font-size: 1.05rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
     .fg input { width: 100%; padding: .8rem 1.05rem; border-radius: 10px; font-size: 1.45rem; font-weight: 600; outline: none; transition: border .2s; }
     .fg .hint { font-size: 1rem; color: #9ca3af; margin-top: .27rem; }
@@ -105,7 +106,7 @@
   <div id="disclaimer">
     <div class="dh"><h2>⚠️ Aviso Legal Importante</h2></div>
     <div class="db">
-      <div class="d-alert"><strong>Descargo de Responsabilidad</strong><br>Los resultados son PROYECCIONES TEÓRICAS, no garantizan ganancias reales.</div>
+      <div class="d-alert"><strong>Descargo de Responsabilidad</strong><br>Los resultados son PROYECCIONES TEÓRICAS. No garantizan ganancias reales.</div>
       <p class="d-item"><strong>1.</strong> Herramienta de simulación con fines educativos.</p>
       <p class="d-item"><strong>2.</strong> Los resultados varían por desempeño, mercado y esfuerzo personal.</p>
       <p class="d-item"><strong>3.</strong> Simplificación del plan oficial, consulte la documentación de ONANO.</p>
@@ -133,12 +134,11 @@
   <!-- Parámetros -->
   <div class="card">
     <h2>Parámetros de Simulación</h2>
-    <div class="params">
-      <div class="fg"><label>Directos por Persona</label><input class="i1" type="number" id="p-dir" value="3" min="1" step="1" oninput="calcular()"></div>
-      <div class="fg"><label>Niveles de Profundidad</label><input class="i2" type="number" id="p-niv" value="5" min="1" step="1" oninput="calcular()"></div>
-      <div class="fg"><label>PV (Vol. Personal)</label><input class="i3" type="number" id="p-cv" value="100" min="0" step="10" oninput="calcular()"></div>
-      <div class="fg"><label>GV (Vol. Grupal)</label><input class="i4" type="number" id="p-gv" value="100" min="0" step="10" oninput="calcular()"></div>
-   <div class="fg"><label>-</label><input class="i5" type="number" id="p-tc" value="1" min="0" step="0.01" oninput="calcular()"><div class="hint"></div></div>
+    <div class="params" style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.35rem;">
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>Directos por Persona</label><input class="i1" type="number" id="p-dir" value="3" min="1" step="1" oninput="calcular()"></div>
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>Niveles de Profundidad</label><input class="i2" type="number" id="p-niv" value="5" min="1" step="1" oninput="calcular()"></div>
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>CV por Persona</label><input class="i3" type="number" id="p-cv" value="100" min="0" step="10" oninput="calcular()"></div>
+      <div class="fg" style="flex:1;min-width:160px;max-width:220px;"><label>GV por Persona</label><input class="i4" type="number" id="p-gv" value="100" min="0" step="10" oninput="calcular()"></div>
     </div>
   </div>
 
@@ -195,27 +195,11 @@
     <div class="btotal" id="tot-match-row" style="display:none"><span>Total Match</span><span class="cg" id="tot-match">—</span></div>
   </div>
 
-  <!-- Bono Avance de Rango -->
-  <div class="card">
-    <h2></h2>
-    <p style="font-size:1.05rem;color:#9ca3af;margin-bottom:.85rem"></p>
-    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
-      <div style="background:#fffbeb;border-radius:10px;padding:1rem 1.5rem">
-        <p style="font-size:1rem;color:#92400e;margin-bottom:.25rem"></p>
-        <p style="font-size:2rem;font-weight:800;color:#d97706" id="k-av-usd">—</p>
-      </div>
-      <div style="background:#f0fdf4;border-radius:10px;padding:1rem 1.5rem">
-        <p style="font-size:1rem;color:#166534;margin-bottom:.25rem"></p>
-        <p style="font-size:2rem;font-weight:800;color:#16a34a" id="k-av-local">—</p>
-      </div>
-    </div>
-  </div>
-
   <!-- Tabla Rangos -->
   <div class="card">
     <h2>🏆 Tabla de Rangos</h2>
     <div class="tw"><table>
-      <thead><tr><th>Rango</th><th>CV Req.</th><th>GV Req.</th><th>Infinito %</th><th>Bono USD</th><th>Bono Convertido</th></tr></thead>
+      <thead><tr><th>Rango</th><th>CV Req.</th><th>GV Req.</th><th>Infinito %</th></tr></thead>
       <tbody id="t-rangos"></tbody>
     </table></div>
   </div>
@@ -290,7 +274,6 @@ function continuar(){
 function calcular(){
   const dir=parseInt($('p-dir').value)||0,niv=parseInt($('p-niv').value)||0;
   const cv=parseFloat($('p-cv').value)||0,gvPP=parseFloat($('p-gv').value)||0;
-  const tc=parseFloat($('p-tc').value)||1;
   if(dir<=0||niv<=0||cv<=0)return;
 
   let totalP=0,miGv=gvPP;const estructura=[];
@@ -313,13 +296,11 @@ function calcular(){
     sumM+=com;fM.push({nivel:np,personas:p,pct,rg:rgS.nombre,uS,iS,com});
   }
 
-  const avU=miR.bono,avL=avU*tc,tot=sumU+resI.total+sumM;
+  const tot=sumU+resI.total+sumM;
 
   $('k-personas').textContent=fn(totalP);
   $('k-gv').textContent='$'+fn(miGv);
   $('k-rango').textContent=miR.nombre;
-  $('k-av-usd').textContent='USD $'+fn(avU);
-  $('k-av-local').textContent=f(avL);
   $('t-total').textContent='$'+f(tot);
   $('t-uni').textContent='$'+f(sumU);
   $('t-inf').textContent='$'+f(resI.total);
@@ -357,8 +338,6 @@ function calcular(){
       <td>${r.nombre===miR.nombre?'★ ':''}${r.nombre}</td>
       <td>${fn(r.cvReq)}</td><td>${fn(r.gvReq)}</td>
       <td style="color:#7c3aed">${r.inf>0?r.inf+'%':'—'}</td>
-      <td style="color:#6b7280">${r.bono>0?'$'+fn(r.bono):'—'}</td>
-      <td style="color:#16a34a;font-weight:600">${r.bono>0?f(r.bono*tc):'—'}</td>
     </tr>`).join('');
 
   let gvAcum=gvPP;
